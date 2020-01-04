@@ -39,11 +39,8 @@ Source code for [ICLR 2020](https://iclr.cc/) paper: [**Composition-Based Multi-
   - `-model` is name of the model `compgcn'.
   - `-gpu` for specifying the GPU to use
   - Rest of the arguments can be listed using `python run.py -h`
-
 ### Citation:
-
 Please cite the following paper if you use this code in your work.
-
 ```bibtex
 @inproceedings{
     vashishth2020compositionbased,
@@ -54,5 +51,4 @@ Please cite the following paper if you use this code in your work.
     url={https://openreview.net/forum?id=BylA_C4tPr}
 }
 ```
-
 For any clarification, comments, or suggestions please create an issue or contact [Shikhar](http://shikhar-vashishth.github.io).
