@@ -2,7 +2,7 @@
 
 [![Conference](http://img.shields.io/badge/ICLR-2020-4b44ce.svg)](https://iclr.cc/) [![Paper](http://img.shields.io/badge/paper-arxiv.1911.03082-B31B1B.svg)](https://arxiv.org/abs/1911.03082) 
 
-Source code for [ICLR 2020](https://iclr.cc/) paper: [**Composition-Based Multi-Relational Graph Convolutional Networks**](https://arxiv.org/abs/1911.03082)
+Source code for [ICLR 2020](https://iclr.cc/) paper: [**Composition-Based Multi-Relational Graph Convolutional Networks**](https://openreview.net/forum?id=BylA_C4tPr)
 
 ![](./overview.png)
 
