@@ -235,7 +235,6 @@ class Runner(object):
 		state = {
 			'state_dict'	: self.model.state_dict(),
 			'best_val'	: self.best_val,
-			'best_test'	: self.best_test,
 			'best_epoch'	: self.best_epoch,
 			'optimizer'	: self.optimizer.state_dict(),
 			'args'		: vars(self.p)
@@ -309,7 +308,7 @@ class Runner(object):
 
 			for step, batch in enumerate(train_iter):
 				sub, rel, obj, label	= self.read_batch(batch, split)
-				pred			= self.model.forward(sub, rel, None, 'one_to_n', run_gcn=(step==0))
+				pred			= self.model.forward(sub, rel)
 				b_range			= torch.arange(pred.size()[0], device=self.device)
 				target_pred		= pred[b_range, obj]
 				pred 			= torch.where(label.byte(), -torch.ones_like(pred) * 10000000, pred)
