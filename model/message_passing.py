@@ -18,19 +18,10 @@ def scatter_(name, src, index, dim_size=None):
 
 	:rtype: :class:`Tensor`
 	"""
-
-	assert name in ['add', 'mean', 'max']
-
-	op		= getattr(torch_scatter, 'scatter_{}'.format(name))
-	fill_value	= -1e38 if name == 'max' else 0
-	out		= op(src, index, 0, None, dim_size, fill_value)
-	if isinstance(out, tuple):
-		out = out[0]
-
-	if name == 'max':
-		out[out == fill_value] = 0
-
-	return out
+	if name == 'add': name = 'sum'
+	assert name in ['sum', 'mean', 'max']
+	out = scatter(src, index, dim=0, out=None, dim_size=dim_size, reduce=name)
+	return out[0] if isinstance(out, tuple) else out
 
 
 class MessagePassing(torch.nn.Module):
