@@ -2,7 +2,7 @@ from helper import *
 from model.message_passing import MessagePassing
 
 class CompGCNConvBasis(MessagePassing):
-	def __init__(self, in_channels, out_channels, num_rels, num_bases, act=lambda x:x, params=None):
+	def __init__(self, in_channels, out_channels, num_rels, num_bases, act=lambda x:x, cache=True, params=None):
 		super(self.__class__, self).__init__()
 
 		self.p 			= params
@@ -12,6 +12,7 @@ class CompGCNConvBasis(MessagePassing):
 		self.num_bases 		= num_bases
 		self.act 		= act
 		self.device		= None
+		self.cache 		= cache			# Should be False for graph classification tasks
 
 		self.w_loop		= get_param((in_channels, out_channels));
 		self.w_in		= get_param((in_channels, out_channels));
@@ -24,6 +25,11 @@ class CompGCNConvBasis(MessagePassing):
 
 		self.drop		= torch.nn.Dropout(self.p.dropout)
 		self.bn			= torch.nn.BatchNorm1d(out_channels)
+		
+		self.in_norm, self.out_norm,
+		self.in_index, self.out_index,
+		self.in_type, self.out_type,
+		self.loop_index, self.loop_type = None, None, None, None, None, None, None, None
 
 		if self.p.bias: self.register_parameter('bias', Parameter(torch.zeros(out_channels)))
 
@@ -37,17 +43,15 @@ class CompGCNConvBasis(MessagePassing):
 		num_edges = edge_index.size(1) // 2
 		num_ent   = x.size(0)
 
-		if not self.cache:
-			self.in_norm, self.out_norm, self.in_index, self.out_index, self.in_type, self.out_type, self.loop_index, self.loop_type = None, None, None, None, None, None, None, None
+		if not self.cache or self.in_norm == None:
+			self.in_index, self.out_index = edge_index[:, :num_edges], edge_index[:, num_edges:]
+			self.in_type,  self.out_type  = edge_type[:num_edges], 	 edge_type [num_edges:]
 
-		self.in_index, self.out_index = edge_index[:, :num_edges], edge_index[:, num_edges:]
-		self.in_type,  self.out_type  = edge_type[:num_edges], 	 edge_type [num_edges:]
+			self.loop_index  = torch.stack([torch.arange(num_ent), torch.arange(num_ent)]).to(self.device)
+			self.loop_type   = torch.full((num_ent,), rel_embed.size(0)-1, dtype=torch.long).to(self.device)
 
-		self.loop_index  = torch.stack([torch.arange(num_ent), torch.arange(num_ent)]).to(self.device)
-		self.loop_type   = torch.full((num_ent,), rel_embed.size(0)-1, dtype=torch.long).to(self.device)
-
-		self.in_norm     = self.compute_norm(self.in_index,  num_ent)
-		self.out_norm    = self.compute_norm(self.out_index, num_ent)
+			self.in_norm     = self.compute_norm(self.in_index,  num_ent)
+			self.out_norm    = self.compute_norm(self.out_index, num_ent)
 		
 		in_res		= self.propagate('add', self.in_index,   x=x, edge_type=self.in_type,   rel_embed=rel_embed, edge_norm=self.in_norm, 	mode='in')
 		loop_res	= self.propagate('add', self.loop_index, x=x, edge_type=self.loop_type, rel_embed=rel_embed, edge_norm=None, 		mode='loop')
