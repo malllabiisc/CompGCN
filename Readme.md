@@ -22,7 +22,7 @@ Source code for [ICLR 2020](https://iclr.cc/) paper: [**Composition-Based Multi-
 
 - Install all the requirements from `requirements.txt.`
 
-- Execute `sh preprocess.sh` for extracting the dataset.
+- Execute `sh preprocess.sh` for extracting the dataset and setting up the folder hierarchy for experiments.
 
 - To start training run:
 
