@@ -2,7 +2,7 @@
 
 [![Conference](http://img.shields.io/badge/ICLR-2020-4b44ce.svg)](https://iclr.cc/) 
 [![Paper](http://img.shields.io/badge/paper-arxiv.1911.03082-B31B1B.svg)](https://arxiv.org/abs/1911.03082) 
-[![Video](http://img.shields.io/badge/video-vimeo-green.svg)](https://iclr.cc/virtual/poster_BylA_C4tPr.html)
+[![Video](http://img.shields.io/badge/video-iclr-green.svg)](https://iclr.cc/virtual/poster_BylA_C4tPr.html)
 [![Slides](http://img.shields.io/badge/slides-pdf-red.svg)](https://shikhar-vashishth.github.io/assets/pdf/slides_compgcn.pdf)
 [![Blog](http://img.shields.io/badge/blog-medium-blue.svg)](https://medium.com/@mgalkin/knowledge-graphs-iclr-2020-f555c8ef10e3)
 
