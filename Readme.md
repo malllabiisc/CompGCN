@@ -71,7 +71,7 @@ Given node and relation embeddings, CompGCN performs a composition operation φ(
   python run.py -score_func conve -opn corr
   
   ##### Overall BEST:
-  python run.py --name best_model -score_func conve -opn corr 
+  python run.py -name best_model -score_func conve -opn corr 
   ```
 
   - `-score_func` denotes the link prediction score score function 
