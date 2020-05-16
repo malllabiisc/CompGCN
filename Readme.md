@@ -8,11 +8,12 @@
   <a href="https://iclr.cc/"><img src="http://img.shields.io/badge/ICLR-2020-4b44ce.svg"></a>
   <a href="https://arxiv.org/abs/1911.03082"><img src="http://img.shields.io/badge/Paper-PDF-red.svg"></a>
   <a href="https://iclr.cc/virtual/poster_BylA_C4tPr.html"><img src="http://img.shields.io/badge/Video-ICLR-green.svg"></a>
-  <a href="https://medium.com/@mgalkin/knowledge-graphs-iclr-2020-f555c8ef10e3"><img src="http://img.shields.io/badge/Blog-Medium-blue.svg"></a>
+  <a href="https://medium.com/@mgalkin/knowledge-graphs-iclr-2020-f555c8ef10e3"><img src="http://img.shields.io/badge/Blog-Medium-B31B1B.svg"></a>
   <a href="https://github.com/malllabiisc/CompGCN/blob/master/LICENSE">
     <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg">
   </a>
 </p>
+
 
 <h2 align="center">
   Overview of CompGCN
@@ -70,7 +71,7 @@
   python run.py -score_func conve -opn corr
   
   ##### Overall BEST:
-  python run.py -name best_model -score_func conve -opn corr 
+  python run.py --name best_model -score_func conve -opn corr 
   ```
 
   - `-score_func` denotes the link prediction score score function 
