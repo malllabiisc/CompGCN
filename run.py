@@ -380,6 +380,7 @@ class Runner(object):
 			self.load_model(save_path)
 			self.logger.info('Successfully Loaded previous model')
 
+		kill_cnt = 0
 		for epoch in range(self.p.max_epochs):
 			train_loss  = self.run_epoch(epoch, val_mrr)
 			val_results = self.evaluate('valid', epoch)
@@ -389,6 +390,15 @@ class Runner(object):
 				self.best_val_mrr  = val_results['mrr']
 				self.best_epoch	   = epoch
 				self.save_model(save_path)
+				kill_cnt = 0
+			else:
+				kill_cnt += 1
+				if kill_cnt % 10 == 0 and self.p.gamma > 5:
+					self.p.gamma -= 5 
+					self.logger.info('Gamma decay on saturation, updated value of gamma: {}'.format(self.p.gamma))
+				if kill_cnt > 25: 
+					self.logger.info("Early Stopping!!")
+					break
 
 			self.logger.info('[Epoch {}]: Training Loss: {:.5}, Valid MRR: {:.5}\n\n'.format(epoch, train_loss, self.best_val_mrr))
 
