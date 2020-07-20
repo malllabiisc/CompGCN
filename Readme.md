@@ -42,13 +42,13 @@ Given node and relation embeddings, CompGCN performs a composition operation φ(
   ```shell
   ##### with TransE Score Function
   # CompGCN (Composition: Subtraction)
-  python run.py -score_func transe -opn sub -gamma 9 -hid_drop 0.1 -init_embed 200
+  python run.py -score_func transe -opn sub -gamma 9 -hid_drop 0.1 -init_dim 200
   
   # CompGCN (Composition: Multiplication)
-  python run.py -score_func transe -opn mult -gamma 9 -hid_drop 0.2 -init_embed 200
+  python run.py -score_func transe -opn mult -gamma 9 -hid_drop 0.2 -init_dim 200
   
   # CompGCN (Composition: Circular Correlation)
-  python run.py -score_func transe -opn corr -gamma 40 -hid_drop 0.1 -init_embed 200
+  python run.py -score_func transe -opn corr -gamma 40 -hid_drop 0.1 -init_dim 200
   
   ##### with DistMult Score Function
   # CompGCN (Composition: Subtraction)
