@@ -28,8 +28,8 @@ Given node and relation embeddings, CompGCN performs a composition operation φ(
 
 ### Dataset:
 
-- We use FB15k-237 and WN18RR dataset for knowledge graph link prediction. 
-- FB15k-237 and WN18RR are included in the `data` directory. 
+- We use the codex-l, codex-m and codex-s datasets for knowledge graph link prediction. 
+- codex-l, codex-m and codex-s are included in the `data` directory. 
 
 ### Training model:
 
