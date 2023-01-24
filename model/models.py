@@ -128,3 +128,79 @@ class CompGCN_ConvE(CompGCNBase):
 
 		score = torch.sigmoid(x)
 		return score
+
+class CompGCN_ConvKD(CompGCNBase):
+	def __init__(self, edge_index, edge_type, params=None):
+		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
+
+		self.bn0 = torch.nn.BatchNorm2d(1)
+		self.drop = torch.nn.Dropout(self.p.hid_drop)
+
+		self.relu = torch.nn.ReLU()
+		self.conv2d1 = torch.nn.Conv2d(1, out_channels=self.p.num_filt, kernel_size=(self.p.ker_sz, 3), stride=1)
+		self.fc = torch.nn.Linear((self.p.embed_dim - self.p.ker_sz + 1) * self.p.num_filt, 1, bias=False)
+
+		self.lmbda = 0.2
+		self.criterion = torch.nn.Softplus()
+
+
+
+	def calc(self, h, r,t):
+		# bs x 1 x dim
+		h = h.unsqueeze(1)
+		r = r.unsqueeze(1)
+		t = t.unsqueeze(1)
+		# bs x 3 x dim
+		conv_input = torch.cat([h, r, t], 1)
+		#bs x dim x 3
+		conv_input = conv_input.transpose(1, 2)
+		#bs x 1 x dim x 3
+		conv_input = conv_input.unsqueeze(1)
+		# bs x 3 x dim x 1
+		out_conv = self.conv2d1(conv_input)
+		out_conv = self.relu(out_conv)
+		# bs x 30
+		out_conv = out_conv.view(-1,(self.p.embed_dim - self.p.ker_sz + 1) * self.p.num_filt)
+		# bs x 1
+		score = self.fc(out_conv)
+		score = score.view(-1)
+
+
+
+		return -score
+
+	def forward(self, sub,rel,tai):
+		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
+		h = sub_emb
+		r = rel_emb
+		t = torch.index_select(all_ent, 0, tai) #Könnte Falsch sein??,
+
+		score = self.calc(h,r,t)
+		l2_reg = torch.mean(h ** 2) + torch.mean(t ** 2) + torch.mean(r ** 2)
+		for W in self.conv2d1.parameters():
+			l2_reg = l2_reg + W.norm(2)
+		for W in self.conv1.parameters(2):
+			l2_reg = l2_reg + W.norm(2)
+		#for W in self.conv2.parameters(2):
+		#	l2_reg = l2_reg + W.norm(2)
+		for W in self.fc.parameters():
+			l2_reg = l2_reg + W.norm(2)
+
+		return (score)
+
+
+	def loss(self, score_regul, _):
+		return torch.mean(self.criterion(score_regul[0] * self.p.batch_size)) #+ self.lmbda * score_regul[1]
+
+	def predict(self,sub,rel,tai):
+		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
+		h = sub_emb
+		r = rel_emb
+		t = torch.index_select(all_ent, 0, tai)
+		score = self.calc(h,r,t)
+		return score.cpu().data.numpy
+
+
+
+
+

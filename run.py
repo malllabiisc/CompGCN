@@ -1,3 +1,5 @@
+import numpy.random
+
 from helper import *
 from data_loader import *
 
@@ -72,8 +74,27 @@ class Runner(object):
 		self.sr2o_all = {k: list(v) for k, v in sr2o.items()}
 		self.triples  = ddict(list)
 
-		for (sub, rel), obj in self.sr2o.items():
-			self.triples['train'].append({'triple':(sub, rel, -1), 'label': self.sr2o[(sub, rel)], 'sub_samp': 1})
+		if self.p.type == 2:
+			for (sub, rel), obj in self.sr2o.items():
+				self.triples['train'].append({'triple':(sub, rel, -1), 'label': self.sr2o[(sub, rel)], 'sub_samp': 1})
+		elif self.p.type == 3:
+			for (sub, rel), obj in self.sr2o.items():
+				if len(obj) >= len(ent_set)//2:
+					raise 'test '
+				wobj = [] #empty list for wrong obj
+				for i in range(len(obj)):
+					self.triples['train'].append({'triple':(sub, rel, obj[i]), 'label': 1, 'sub_samp': 1}) #generates a Correct relation
+					n_obj = numpy.random_integer(0, len(ent_set))
+
+					while n_obj in obj or n_obj in wobj:
+						n_obj = numpy.random_integer(0, len(ent_set))
+					self.triples['train'].append({'triple':(sub, rel, obj[i]), 'label': 1, 'sub_samp': 0}) #generates a wrong relation
+					wobj.add(n_obj)
+
+
+
+
+
 
 		for split in ['test', 'valid']:
 			for sub, rel, obj in self.data[split]:
@@ -179,6 +200,7 @@ class Runner(object):
 		if   model_name.lower()	== 'compgcn_transe': 	model = CompGCN_TransE(self.edge_index, self.edge_type, params=self.p)
 		elif model_name.lower()	== 'compgcn_distmult': 	model = CompGCN_DistMult(self.edge_index, self.edge_type, params=self.p)
 		elif model_name.lower()	== 'compgcn_conve': 	model = CompGCN_ConvE(self.edge_index, self.edge_type, params=self.p)
+		elif model_name.lower() == 'compgcn_convkd':    model = CompGCN_ConvKD(self.edge_index, self.edge_type, params=self.p)
 		else: raise NotImplementedError
 
 		model.to(self.device)
@@ -280,6 +302,7 @@ class Runner(object):
 		left_results  = self.predict(split=split, mode='tail_batch')
 		right_results = self.predict(split=split, mode='head_batch')
 		results       = get_combined_results(left_results, right_results)
+
 		self.logger.info('[Epoch {} {}]: MRR: Tail : {:.5}, Head : {:.5}, Avg : {:.5}'.format(epoch, split, results['left_mrr'], results['right_mrr'], results['mrr']))
 		return results
 
@@ -308,7 +331,7 @@ class Runner(object):
 
 			for step, batch in enumerate(train_iter):
 				sub, rel, obj, label	= self.read_batch(batch, split)
-				pred			= self.model.forward(sub, rel)
+				pred		    = self.model.forward(sub, rel)
 				b_range			= torch.arange(pred.size()[0], device=self.device)
 				target_pred		= pred[b_range, obj]
 				pred 			= torch.where(label.byte(), -torch.ones_like(pred) * 10000000, pred)
@@ -343,12 +366,14 @@ class Runner(object):
 		self.model.train()
 		losses = []
 		train_iter = iter(self.data_iter['train'])
-
 		for step, batch in enumerate(train_iter):
 			self.optimizer.zero_grad()
 			sub, rel, obj, label = self.read_batch(batch, 'train')
 
-			pred	= self.model.forward(sub, rel)
+			if self.p.score_func.lower() == 'convkd':
+				pred = self.model.forward(sub,rel,obj)
+			else:
+				pred	= self.model.forward(sub, rel)
 			loss	= self.model.loss(pred, label)
 
 			loss.backward()
@@ -446,9 +471,11 @@ if __name__ == '__main__':
 
 	parser.add_argument('-logdir',          dest='log_dir',         default='./log/',               help='Log directory')
 	parser.add_argument('-config',          dest='config_dir',      default='./config/',            help='Config directory')
+
+	parser.add_argument('-type', dest='type', default=2, type=int ,help='tail prediction or likelihood of tail beeing the the link?? (2/3)')
 	args = parser.parse_args()
 
-	if not args.restore: args.name = args.name + '_' + time.strftime('%d_%m_%Y') + '_' + time.strftime('%H:%M:%S')
+	if not args.restore: args.name = args.name + '_' + time.strftime('%d_%m_%Y') + '_' + time.strftime('%H_%M_%S')
 
 	set_gpu(args.gpu)
 	np.random.seed(args.seed)
