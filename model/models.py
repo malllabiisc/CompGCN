@@ -61,8 +61,9 @@ class CompGCN_TransE(CompGCNBase):
 
 		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop)
 		obj_emb				= sub_emb + rel_emb
-
-		x	= self.p.gamma - torch.norm(obj_emb.unsqueeze(1) - all_ent, p=1, dim=2)		
+		print(obj_emb.size())
+		x	= self.p.gamma - torch.norm(obj_emb.unsqueeze(1) - all_ent, p=1, dim=2)
+		print(x.size())
 		score	= torch.sigmoid(x)
 
 		return score
@@ -102,7 +103,7 @@ class CompGCN_ConvE(CompGCNBase):
 		self.fc			= torch.nn.Linear(self.flat_sz, self.p.embed_dim)
 
 	def concat(self, e1_embed, rel_embed):
-		e1_embed	= e1_embed. view(-1, 1, self.p.embed_dim)
+		e1_embed	= e1_embed.view(-1, 1, self.p.embed_dim)
 		rel_embed	= rel_embed.view(-1, 1, self.p.embed_dim)
 		stack_inp	= torch.cat([e1_embed, rel_embed], 1)
 		stack_inp	= torch.transpose(stack_inp, 2, 1).reshape((-1, 1, 2*self.p.k_w, self.p.k_h))
@@ -122,7 +123,7 @@ class CompGCN_ConvE(CompGCNBase):
 		x				= self.hidden_drop2(x)
 		x				= self.bn2(x)
 		x				= F.relu(x)
-
+		print(all_ent.transpose(1,0).size())
 		x = torch.mm(x, all_ent.transpose(1,0))
 		x += self.bias.expand_as(x)
 
@@ -137,13 +138,18 @@ class CompGCN_ConvKD(CompGCNBase):
 		self.drop = torch.nn.Dropout(self.p.hid_drop)
 
 		self.relu = torch.nn.ReLU()
-		self.conv2d1 = torch.nn.Conv2d(1, out_channels=self.p.num_filt, kernel_size=(self.p.ker_sz, 3), stride=1)
+		self.conv2d1 = torch.nn.Conv2d(1, out_channels=self.p.num_filt, kernel_size=(1, 3), stride=1)
 		self.fc = torch.nn.Linear((self.p.embed_dim - self.p.ker_sz + 1) * self.p.num_filt, 1, bias=False)
+		self.fake_fc_with_conv = torch.nn.Conv2d(self.p.num_filt,out_channels= 1 , kernel_size=(self.p.embed_dim, 1), stride=self.p.embed_dim,bias=False)
 
-		self.lmbda = 0.2
-		self.criterion = torch.nn.Softplus()
+		total_params = sum(
+			param.numel() for param in self.parameters()
+		)
+		print("Total Parameter: " + str(total_params))
 
 
+
+	"""
 
 	def calc(self, h, r,t):
 		# bs x 1 x dim
@@ -160,7 +166,7 @@ class CompGCN_ConvKD(CompGCNBase):
 		out_conv = self.conv2d1(conv_input)
 		out_conv = self.relu(out_conv)
 		# bs x 30
-		out_conv = out_conv.view(-1,(self.p.embed_dim - self.p.ker_sz + 1) * self.p.num_filt)
+		print()
 		# bs x 1
 		score = self.fc(out_conv)
 		score = score.view(-1)
@@ -168,37 +174,41 @@ class CompGCN_ConvKD(CompGCNBase):
 
 
 		return -score
-
-	def forward(self, sub,rel,tai):
+	"""
+	def forward(self, sub,rel):
 		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
 		h = sub_emb
 		r = rel_emb
-		t = torch.index_select(all_ent, 0, tai) #Könnte Falsch sein??,
+		t = all_ent
 
-		score = self.calc(h,r,t)
-		l2_reg = torch.mean(h ** 2) + torch.mean(t ** 2) + torch.mean(r ** 2)
-		for W in self.conv2d1.parameters():
-			l2_reg = l2_reg + W.norm(2)
-		for W in self.conv1.parameters(2):
-			l2_reg = l2_reg + W.norm(2)
-		#for W in self.conv2.parameters(2):
-		#	l2_reg = l2_reg + W.norm(2)
-		for W in self.fc.parameters():
-			l2_reg = l2_reg + W.norm(2)
-
-		return (score)
+		# bs x 1 x dim
 
 
-	def loss(self, score_regul, _):
-		return torch.mean(self.criterion(score_regul[0] * self.p.batch_size)) #+ self.lmbda * score_regul[1]
 
-	def predict(self,sub,rel,tai):
-		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
-		h = sub_emb
-		r = rel_emb
-		t = torch.index_select(all_ent, 0, tai)
-		score = self.calc(h,r,t)
-		return score.cpu().data.numpy
+		h = h.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((self.p.batch_size,1,self.p.num_ent * self.p.embed_dim))
+		r = r.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((self.p.batch_size,1,self.p.num_ent * self.p.embed_dim))
+		t = t.unsqueeze(0)
+		t = t.expand(self.p.batch_size,-1,-1).reshape((self.p.batch_size,1,self.p.num_ent * self.p.embed_dim))
+
+
+		# bs x 3 x dim
+		x = torch.cat([h, r, t], 1)
+		#bs x dim x 3
+		x = x.transpose(1, 2)
+		#bs x 1 x dim x 3
+		x = x.unsqueeze(1)
+		# bs x 3 x dim x 1
+		x = self.conv2d1(x)
+		x = self.relu(x)
+		score = self.fake_fc_with_conv(x)
+		score = score.view(-1)
+
+
+		return torch.sigmoid(score)
+
+
+
+
 
 
 

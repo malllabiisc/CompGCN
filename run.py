@@ -74,33 +74,17 @@ class Runner(object):
 		self.sr2o_all = {k: list(v) for k, v in sr2o.items()}
 		self.triples  = ddict(list)
 
-		if self.p.type == 2:
-			for (sub, rel), obj in self.sr2o.items():
+		for (sub, rel), obj in self.sr2o.items():
 				self.triples['train'].append({'triple':(sub, rel, -1), 'label': self.sr2o[(sub, rel)], 'sub_samp': 1})
-		elif self.p.type == 3:
-			for (sub, rel), obj in self.sr2o.items():
-				if len(obj) >= len(ent_set)//2:
-					raise 'test '
-				wobj = [] #empty list for wrong obj
-				for i in range(len(obj)):
-					self.triples['train'].append({'triple':(sub, rel, obj[i]), 'label': 1, 'sub_samp': 1}) #generates a Correct relation
-					n_obj = numpy.random_integer(0, len(ent_set))
-
-					while n_obj in obj or n_obj in wobj:
-						n_obj = numpy.random_integer(0, len(ent_set))
-					self.triples['train'].append({'triple':(sub, rel, obj[i]), 'label': 1, 'sub_samp': 0}) #generates a wrong relation
-					wobj.add(n_obj)
-
-
-
-
-
-
 		for split in ['test', 'valid']:
 			for sub, rel, obj in self.data[split]:
 				rel_inv = rel + self.p.num_rel
-				self.triples['{}_{}'.format(split, 'tail')].append({'triple': (sub, rel, obj), 	   'label': self.sr2o_all[(sub, rel)]})
+
+				rel_inv = rel + self.p.num_rel
+				self.triples['{}_{}'.format(split, 'tail')].append({'triple': (sub, rel, obj), 'label': self.sr2o_all[(sub, rel)]})
 				self.triples['{}_{}'.format(split, 'head')].append({'triple': (obj, rel_inv, sub), 'label': self.sr2o_all[(obj, rel_inv)]})
+
+
 
 		self.triples = dict(self.triples)
 
@@ -176,9 +160,8 @@ class Runner(object):
 			torch.backends.cudnn.deterministic = True
 		else:
 			self.device = torch.device('cpu')
-
 		self.load_data()
-		self.model        = self.add_model(self.p.model, self.p.score_func)
+		self.model = self.add_model(self.p.model, self.p.score_func)
 		self.optimizer    = self.add_optimizer(self.model.parameters())
 
 
@@ -196,7 +179,6 @@ class Runner(object):
 		
 		"""
 		model_name = '{}_{}'.format(model, score_func)
-
 		if   model_name.lower()	== 'compgcn_transe': 	model = CompGCN_TransE(self.edge_index, self.edge_type, params=self.p)
 		elif model_name.lower()	== 'compgcn_distmult': 	model = CompGCN_DistMult(self.edge_index, self.edge_type, params=self.p)
 		elif model_name.lower()	== 'compgcn_conve': 	model = CompGCN_ConvE(self.edge_index, self.edge_type, params=self.p)
@@ -370,10 +352,7 @@ class Runner(object):
 			self.optimizer.zero_grad()
 			sub, rel, obj, label = self.read_batch(batch, 'train')
 
-			if self.p.score_func.lower() == 'convkd':
-				pred = self.model.forward(sub,rel,obj)
-			else:
-				pred	= self.model.forward(sub, rel)
+			pred	= self.model.forward(sub, rel)
 			loss	= self.model.loss(pred, label)
 
 			loss.backward()
