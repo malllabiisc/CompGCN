@@ -131,12 +131,12 @@ class CompGCN_ConvKD(CompGCNBase):
 	def __init__(self, edge_index, edge_type, params=None):
 		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
 
-		self.bn0 = torch.nn.BatchNorm2d(1)
+		#self.bn0 = torch.nn.BatchNorm2d(1)
 		self.drop = torch.nn.Dropout(self.p.hid_drop)
 
 		self.relu = torch.nn.ReLU()
 		self.conv2d1 = torch.nn.Conv2d(1, out_channels=self.p.num_filt, kernel_size=(1, 3), stride=1)
-		self.fc = torch.nn.Linear((self.p.embed_dim - self.p.ker_sz + 1) * self.p.num_filt, 1, bias=False)
+		#self.fc = torch.nn.Linear((self.p.embed_dim - self.p.ker_sz + 1) * self.p.num_filt, 1, bias=False)
 		self.fake_fc_with_conv = torch.nn.Conv2d(self.p.num_filt,out_channels= 1 , kernel_size=(self.p.embed_dim, 1), stride=self.p.embed_dim,bias=False)
 
 		total_params = sum(
@@ -179,13 +179,14 @@ class CompGCN_ConvKD(CompGCNBase):
 		t = all_ent
 
 		# bs x 1 x dim
+		l = len(sub)
 
 
 
-		h = h.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((self.p.batch_size,1,self.p.num_ent * self.p.embed_dim))
-		r = r.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((self.p.batch_size,1,self.p.num_ent * self.p.embed_dim))
+		h = h.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
+		r = r.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
 		t = t.unsqueeze(0)
-		t = t.expand(self.p.batch_size,-1,-1).reshape((self.p.batch_size,1,self.p.num_ent * self.p.embed_dim))
+		t = t.expand(l,-1,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
 
 
 		# bs x 3 x dim
@@ -198,7 +199,9 @@ class CompGCN_ConvKD(CompGCNBase):
 		x = self.conv2d1(x)
 		x = self.relu(x)
 		score = self.fake_fc_with_conv(x)
-		score = score.view(-1)
+		score = score.view(l,self.p.num_ent)
+
+
 
 
 		return torch.sigmoid(score)
