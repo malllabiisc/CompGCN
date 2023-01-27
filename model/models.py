@@ -121,7 +121,6 @@ class CompGCN_ConvE(CompGCNBase):
 		x				= self.hidden_drop2(x)
 		x				= self.bn2(x)
 		x				= F.relu(x)
-		print(all_ent.transpose(1,0).size())
 		x = torch.mm(x, all_ent.transpose(1,0))
 		x += self.bias.expand_as(x)
 
@@ -164,7 +163,7 @@ class CompGCN_ConvKD(CompGCNBase):
 		out_conv = self.conv2d1(conv_input)
 		out_conv = self.relu(out_conv)
 		# bs x 30
-		print()
+	
 		# bs x 1
 		score = self.fc(out_conv)
 		score = score.view(-1)
