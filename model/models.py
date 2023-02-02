@@ -136,7 +136,6 @@ class CompGCN_ConvKD(CompGCNBase):
 
 		self.relu = torch.nn.ReLU()
 		self.conv2d1 = torch.nn.Conv2d(1, out_channels=self.p.num_filt, kernel_size=(1, 3), stride=1)
-		#self.fc = torch.nn.Linear((self.p.embed_dim - self.p.ker_sz + 1) * self.p.num_filt, 1, bias=False)
 		self.fake_fc_with_conv = torch.nn.Conv2d(self.p.num_filt,out_channels= 1 , kernel_size=(self.p.embed_dim, 1), stride=self.p.embed_dim,bias=False)
 
 		total_params = sum(
@@ -144,40 +143,12 @@ class CompGCN_ConvKD(CompGCNBase):
 		)
 		print("Total Parameter: " + str(total_params))
 
-
-
-	"""
-
-	def calc(self, h, r,t):
-		# bs x 1 x dim
-		h = h.unsqueeze(1)
-		r = r.unsqueeze(1)
-		t = t.unsqueeze(1)
-		# bs x 3 x dim
-		conv_input = torch.cat([h, r, t], 1)
-		#bs x dim x 3
-		conv_input = conv_input.transpose(1, 2)
-		#bs x 1 x dim x 3
-		conv_input = conv_input.unsqueeze(1)
-		# bs x 3 x dim x 1
-		out_conv = self.conv2d1(conv_input)
-		out_conv = self.relu(out_conv)
-		# bs x 30
-	
-		# bs x 1
-		score = self.fc(out_conv)
-		score = score.view(-1)
-
-
-
-		return -score
-	"""
 	def forward(self, sub,rel):
 		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
 		h = sub_emb
 		r = rel_emb
 		t = all_ent
-
+		t = self.drop(t)
 		# bs x 1 x dim
 		l = len(sub)
 
@@ -193,6 +164,7 @@ class CompGCN_ConvKD(CompGCNBase):
 		x = torch.cat([h, r, t], 1)
 		#bs x dim x 3
 		x = x.transpose(1, 2)
+
 		#bs x 1 x dim x 3
 		x = x.unsqueeze(1)
 		# bs x 3 x dim x 1
