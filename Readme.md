@@ -70,6 +70,9 @@ Given node and relation embeddings, CompGCN performs a composition operation φ(
   # CompGCN (Composition: Circular Correlation)
   python run.py -score_func conve -opn corr
   
+  ##### CompGCN with ConvKB ScoreFunction
+  python run.py -score_func convkd -init_dim 100 -num_filt 3
+  
   ##### Overall BEST:
   python run.py -name best_model -score_func conve -opn corr 
   ```
