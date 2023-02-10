@@ -21,10 +21,12 @@
 </h2>
 Given node and relation embeddings, CompGCN performs a composition operation φ(·) over each edge in the neighborhood of a central node (e.g. Christopher Nolan above). The composed embeddings are then convolved with specific filters WO and WI for original and inverse relations respectively. We omit self-loop in the diagram for clarity. The message from all the neighbors are then aggregated to get an updated embedding of the central node. Also, the relation embeddings are transformed using a separate weight matrix. Please refer to the paper for details.
 
-### Dependencies
+# Dependencies
 
-- Compatible with PyTorch 1.0 and Python 3.x, <=3.7
-- Dependencies can be installed using `pip install -r requirements.txt`.
+We evaluated the CompGCN repository with the following configurations.
+
+## pyTorch 1.4, Python 3.x, <=3.7, CPU
+- Dependencies can be installed using `pip install -r requirements_old.txt`.
   - Note: If issues arise installing torch/torch_scatter or when executing the code, try to install them manually, with the following command:
   ```commandline
   pip install --no-index torch_scatter==2.0.4 -f https://data.pyg.org/whl/torch-1.4.0+cpu.html
@@ -32,25 +34,32 @@ Given node and relation embeddings, CompGCN performs a composition operation φ(
   ```commandline
   pip install torch==1.4.0 --extra-index-url https://download.pytorch.org/whl/cpu
   ```
-  Note this installs the cpu version. If you use CUDA, adapt the commands accordingly [[1](https://pypi.org/project/torch-scatter/), [2](https://pytorch.org/get-started/locally/)].
+## pyTorch 1.4, Python 3.x, <=3.7, CUDA 10.1
+- Install all the requirements from `pip install -r requirements_old.txt`.
+  - Note: If issues arise installing torch/torch_scatter or when executing the code, try to install them manually, with the following command:
+  ```commandline
+  pip install --no-index torch_scatter==2.0.4 -f https://data.pyg.org/whl/torch-1.4.0%2Bcu101.html
+  ``` 
+  For pyTorch 1.4 you need to manually search to correct version [here](https://download.pytorch.org/whl/cu101/torch/), because the official installation methods are broken [[1](https://github.com/pytorch/pytorch/issues/37113)]. For example here we are installing pyTorch 1.4 for the Windows platform on a mobile chip:
+  ```commandline
+    pip install https://download.pytorch.org/whl/cu101/torch-1.4.0-cp37-cp37m-win_amd64.whl
+    ```
+## pyTorch 1.13.1, Python 3.9, CUDA 11.7
+- Install all the requirements from `pip install -r requirements.txt`.
+  - Note: If issues arise installing torch/torch_scatter or when executing the code, try to install them manually, with the following command:
+  ```commandline
+  pip install torch==1.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+  ```
+  ```commandline
+  pip install torch-scatter==2.1.0 -f https://data.pyg.org/whl/torch-1.13.0+cu117.html
+  ```
 
-### Dataset:
+# Dataset:
 
 - We use the codex-l, codex-m and codex-s datasets for knowledge graph link prediction. 
 - codex-l, codex-m and codex-s are included in the `data` directory. 
 
-### Training model:
-
-- Install all the requirements from `requirements.txt.`
-  - Note: If issues arise installing torch/torch_scatter or when executing the code, try to install them manually, with the following command:
-  ```commandline
-  pip install --no-index torch_scatter==2.0.4 -f https://data.pyg.org/whl/torch-1.4.0+cpu.html
-  ```
-  ```commandline
-  pip install torch==1.4.0 --extra-index-url https://download.pytorch.org/whl/cpu
-  ```
-  Note this installs the cpu version. If you use CUDA, adapt the commands accordingly [[1](https://pypi.org/project/torch-scatter/), [2](https://pytorch.org/get-started/locally/)].
-
+# Training model:
 - Execute `./preprocess.sh` for extracting the dataset and setting up the folder hierarchy for experiments.
 
 - Commands for reproducing the reported results on link prediction:
