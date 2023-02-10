@@ -62,7 +62,7 @@ class CompGCN_TransE(CompGCNBase):
 		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop)
 		obj_emb				= sub_emb + rel_emb
 
-		x	= self.p.gamma - torch.norm(obj_emb.unsqueeze(1) - all_ent, p=1, dim=2)
+		x	= self.p.gamma - torch.norm(obj_emb.unsqueeze(1) - all_ent, p=1, dim=2)		
 		score	= torch.sigmoid(x)
 
 		return score
