@@ -61,6 +61,7 @@ class CompGCN_TransE(CompGCNBase):
 
 		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop)
 		obj_emb				= sub_emb + rel_emb
+
 		x	= self.p.gamma - torch.norm(obj_emb.unsqueeze(1) - all_ent, p=1, dim=2)
 		score	= torch.sigmoid(x)
 
@@ -121,68 +122,41 @@ class CompGCN_ConvE(CompGCNBase):
 		x				= self.hidden_drop2(x)
 		x				= self.bn2(x)
 		x				= F.relu(x)
+
 		x = torch.mm(x, all_ent.transpose(1,0))
 		x += self.bias.expand_as(x)
 
 		score = torch.sigmoid(x)
 		return score
 
-class CompGCN_ConvKD(CompGCNBase):
+class CompGCN_ConvKB(CompGCNBase):
+	'''Implemtents the ConvKB Scoring Function'''
 	def __init__(self, edge_index, edge_type, params=None):
 		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
-
-		#self.bn0 = torch.nn.BatchNorm2d(1)
 		self.drop = torch.nn.Dropout(self.p.hid_drop)
-
 		self.relu = torch.nn.ReLU()
 		self.conv2d1 = torch.nn.Conv2d(1, out_channels=self.p.num_filt, kernel_size=(1, 3), stride=1)
 		self.fake_fc_with_conv = torch.nn.Conv2d(self.p.num_filt,out_channels= 1 , kernel_size=(self.p.embed_dim, 1), stride=self.p.embed_dim,bias=False)
 
+		#Prints the number of parameter in the network to the console
 		total_params = sum(
 			param.numel() for param in self.parameters()
 		)
 		print("Total Parameter: " + str(total_params))
 
 	def forward(self, sub,rel):
-		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
-		h = sub_emb
-		r = rel_emb
-		t = all_ent
-		t = self.drop(t)
-		# bs x 1 x dim
+		sub_emb, rel_emb, all_ent, _ = self.forward_base(sub, rel, self.drop, self.drop)
+
 		l = len(sub)
-
-
-
-		h = h.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
-		r = r.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
-		t = t.unsqueeze(0)
-		t = t.expand(l,-1,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
-
-
-		# bs x 3 x dim
-		x = torch.cat([h, r, t], 1)
-		#bs x dim x 3
-		x = x.transpose(1, 2)
-
-		#bs x 1 x dim x 3
-		x = x.unsqueeze(1)
-		# bs x 3 x dim x 1
-		x = self.conv2d1(x)
-		x = self.relu(x)
-		score = self.fake_fc_with_conv(x)
-		score = score.view(l,self.p.num_ent)
-
-
-
-
-		return torch.sigmoid(score)
-
-
-
-
-
-
-
-
-
+		sub_emb_repeat = sub_emb.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
+		rel_emb_repeat = rel_emb.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
+		all_ent = all_ent.unsqueeze(0).expand(l,-1,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
+													#size of t
+		x = torch.cat([sub_emb_repeat, rel_emb_repeat, all_ent], 1) #bs x 3 x num_ent * embed_dim
+		x = x.transpose(1, 2) 						#bs x num_ent * embed_dim x 3
+		x = x.unsqueeze(1)  						#bs x 1 x num_ent * embed_dim x 3
+		conv_out = self.conv2d1(x) 					#bs x num_filt x num_ent * embed_dim x 1
+		conv_out = self.relu(conv_out)				#bs x num_filt x num_ent * embed_dim x 1
+		score = self.fake_fc_with_conv(conv_out) 	#bs x 1 x num_ent x 1
+		score = score.view(l,self.p.num_ent) 		#bs x num_ent
+		return torch.sigmoid(score) 				#bs x 2034
