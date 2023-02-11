@@ -102,7 +102,7 @@ class CompGCN_ConvE(CompGCNBase):
 		self.fc			= torch.nn.Linear(self.flat_sz, self.p.embed_dim)
 
 	def concat(self, e1_embed, rel_embed):
-		e1_embed	= e1_embed.view(-1, 1, self.p.embed_dim)
+		e1_embed	= e1_embed. view(-1, 1, self.p.embed_dim)
 		rel_embed	= rel_embed.view(-1, 1, self.p.embed_dim)
 		stack_inp	= torch.cat([e1_embed, rel_embed], 1)
 		stack_inp	= torch.transpose(stack_inp, 2, 1).reshape((-1, 1, 2*self.p.k_w, self.p.k_h))
@@ -130,13 +130,14 @@ class CompGCN_ConvE(CompGCNBase):
 		return score
 
 class CompGCN_ConvKB(CompGCNBase):
-	'''Implemtents the ConvKB Scoring Function'''
+	'''Implements the ConvKB Scoring Function'''
 	def __init__(self, edge_index, edge_type, params=None):
+		'''Init the ComGCN Base and all the  layer used in the Score function ConvKB'''
 		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
 		self.drop = torch.nn.Dropout(self.p.hid_drop)
 		self.relu = torch.nn.ReLU()
-		self.conv2d1 = torch.nn.Conv2d(1, out_channels=self.p.num_filt, kernel_size=(1, 3), stride=1)
-		self.fake_fc_with_conv = torch.nn.Conv2d(self.p.num_filt,out_channels= 1 , kernel_size=(self.p.embed_dim, 1), stride=self.p.embed_dim,bias=False)
+		self.conv2d1 = torch.nn.Conv2d(1, out_channels=self.p.num_filt, kernel_size=(1, 3), stride=1, bias=True)
+		self.fake_fc_with_conv = torch.nn.Conv2d(self.p.num_filt,out_channels = 1, kernel_size=(self.p.embed_dim, 1), stride=self.p.embed_dim, bias=False)
 
 		#Prints the number of parameter in the network to the console
 		total_params = sum(
@@ -145,18 +146,27 @@ class CompGCN_ConvKB(CompGCNBase):
 		print("Total Parameter: " + str(total_params))
 
 	def forward(self, sub,rel):
-		sub_emb, rel_emb, all_ent, _ = self.forward_base(sub, rel, self.drop, self.drop)
-
+		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
 		l = len(sub)
-		sub_emb_repeat = sub_emb.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
-		rel_emb_repeat = rel_emb.unsqueeze(1).expand(-1,self.p.num_ent,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
-		all_ent = all_ent.unsqueeze(0).expand(l,-1,-1).reshape((l,1,self.p.num_ent * self.p.embed_dim))
-													#size of tensor after manipulation, bs= batch_size
+		#we create an array that repeats sub_emb num_ent(Number of Entities) times, in 2 Dimensions
+		print(sub_emb.size())
+		sub_emb_repeat = sub_emb.unsqueeze(1).expand(-1, self.p.num_ent, -1).reshape((l, 1, self.p.num_ent * self.p.embed_dim))
+		# we create an array that repeats rel_emb num_ent(Number of Entities) times, in 2 Dimensions
+		rel_emb_repeat = rel_emb.unsqueeze(1).expand(-1, self.p.num_ent, -1).reshape((l, 1, self.p.num_ent * self.p.embed_dim))
+		# we reshape all_ent to be in 2 Dimensions
+		all_ent = all_ent.unsqueeze(0).expand(l, -1, -1).view((l, 1, self.p.num_ent * self.p.embed_dim))
+										#size of tensor after manipulation, bs= batch_size, num_ent= Number of entities, embed_dim = embedding dimension
+		#we concatenated the 3 tensors to one tensor
 		x = torch.cat([sub_emb_repeat, rel_emb_repeat, all_ent], 1) 	#bs x 3 x num_ent * embed_dim
 		x = x.transpose(1, 2) 						#bs x num_ent * embed_dim x 3
 		x = x.unsqueeze(1)  						#bs x 1 x num_ent * embed_dim x 3
+		#we apply a convolution with a 1x3 kernel
 		conv_out = self.conv2d1(x) 					#bs x num_filt x num_ent * embed_dim x 1
 		conv_out = self.relu(conv_out)					#bs x num_filt x num_ent * embed_dim x 1
+
+		#we use a convolution with an embed_dim x 1 kernel and a stride of embed_dim and 1 filter, to calculate the dot product of every convolution results of (sub_emb,rel_emb,t) with the same weight w
 		score = self.fake_fc_with_conv(conv_out) 			#bs x 1 x num_ent x 1
-		score = score.view(l,self.p.num_ent) 				#bs x num_ent
+
+		score = score.view(l, self.p.num_ent) 				#bs x num_ent
+		#we apply a sigmoid function to all dot products
 		return torch.sigmoid(score) 					#bs x num_ent
