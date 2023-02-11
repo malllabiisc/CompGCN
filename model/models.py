@@ -130,7 +130,11 @@ class CompGCN_ConvE(CompGCNBase):
 		return score
 
 class CompGCN_ConvKB(CompGCNBase):
-	'''Implements the ConvKB Scoring Function'''
+	'''
+	Implements the ConvKB Scoring Function
+	The scoring Function works by, first concatenating the embedding of the head,relation and tail.
+	Then we apply a convolution, and finally we calculate the dot product of the convolution and the weight w.
+	'''
 	def __init__(self, edge_index, edge_type, params=None):
 		'''Init the ComGCN Base and all the  layer used in the Score function ConvKB'''
 		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
@@ -148,12 +152,12 @@ class CompGCN_ConvKB(CompGCNBase):
 	def forward(self, sub,rel):
 		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
 		l = len(sub)
-		#we create an array that repeats sub_emb num_ent(Number of Entities) times, in 2 Dimensions
+		#we create an array that repeats sub_emb num_ent(Number of Entities) times
 		print(sub_emb.size())
 		sub_emb_repeat = sub_emb.unsqueeze(1).expand(-1, self.p.num_ent, -1).reshape((l, 1, self.p.num_ent * self.p.embed_dim))
-		# we create an array that repeats rel_emb num_ent(Number of Entities) times, in 2 Dimensions
+		# we create an array that repeats rel_emb num_ent(Number of Entities) times
 		rel_emb_repeat = rel_emb.unsqueeze(1).expand(-1, self.p.num_ent, -1).reshape((l, 1, self.p.num_ent * self.p.embed_dim))
-		# we reshape all_ent to be in 2 Dimensions
+		# we reshape all_ent 
 		all_ent = all_ent.unsqueeze(0).expand(l, -1, -1).view((l, 1, self.p.num_ent * self.p.embed_dim))
 										#size of tensor after manipulation, bs= batch_size, num_ent= Number of entities, embed_dim = embedding dimension
 		#we concatenated the 3 tensors to one tensor
