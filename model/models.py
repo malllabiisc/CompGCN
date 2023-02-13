@@ -22,6 +22,8 @@ class CompGCNBase(BaseModel):
 		self.p.gcn_dim		= self.p.embed_dim if self.p.gcn_layer == 1 else self.p.gcn_dim
 		self.init_embed		= get_param((self.p.num_ent,   self.p.init_dim))
 		self.device		= self.edge_index.device
+		self.disable_gnn_encoder = self.p.disable_gnn_encoder
+
 
 		if self.p.num_bases > 0:
 			self.init_rel  = get_param((self.p.num_bases,   self.p.init_dim))
@@ -38,16 +40,38 @@ class CompGCNBase(BaseModel):
 
 		self.register_parameter('bias', Parameter(torch.zeros(self.p.num_ent)))
 
-	def forward_base(self, sub, rel, drop1, drop2):
+	def forward_base(self, sub, rel, drop1, drop2, disable_gnn_encoder: bool):
+		"""
 
-		r	= self.init_rel if self.p.score_func != 'transe' else torch.cat([self.init_rel, -self.init_rel], dim=0)
-		x, r	= self.conv1(self.init_embed, self.edge_index, self.edge_type, rel_embed=r)
-		x	= drop1(x)
-		x, r	= self.conv2(x, self.edge_index, self.edge_type, rel_embed=r) 	if self.p.gcn_layer == 2 else (x, r)
-		x	= drop2(x) 							if self.p.gcn_layer == 2 else x
+		Parameters
+		----------
+		sub subset
+		rel relation
+		drop1 first drop function
+		drop2 second drop function
+		disable_gnn_encoder how to disable the gnn encoder
 
-		sub_emb	= torch.index_select(x, 0, sub)
-		rel_emb	= torch.index_select(r, 0, rel)
+		Returns subset of the embedding, subset of the relation, embedding
+		-------
+
+		"""
+		if disable_gnn_encoder:
+			r = self.init_rel if self.p.score_func != 'transe' else torch.cat([self.init_rel, -self.init_rel], dim=0)
+			x = self.init_embed
+			x = drop1(x)
+			x = drop2(x) if self.p.gcn_layer == 2 else x
+
+			sub_emb = torch.index_select(x, 0, sub)
+			rel_emb = torch.index_select(r, 0, rel)
+		else:
+			r	= self.init_rel if self.p.score_func != 'transe' else torch.cat([self.init_rel, -self.init_rel], dim=0)
+			x, r	= self.conv1(self.init_embed, self.edge_index, self.edge_type, rel_embed=r)
+			x	= drop1(x)
+			x, r	= self.conv2(x, self.edge_index, self.edge_type, rel_embed=r) 	if self.p.gcn_layer == 2 else (x, r)
+			x	= drop2(x) 							if self.p.gcn_layer == 2 else x
+
+			sub_emb = torch.index_select(x, 0, sub)
+			rel_emb = torch.index_select(r, 0, rel)
 
 		return sub_emb, rel_emb, x
 
@@ -59,7 +83,7 @@ class CompGCN_TransE(CompGCNBase):
 
 	def forward(self, sub, rel):
 
-		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop)
+		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop, self.disable_gnn_encoder)
 		obj_emb				= sub_emb + rel_emb
 
 		x	= self.p.gamma - torch.norm(obj_emb.unsqueeze(1) - all_ent, p=1, dim=2)		
@@ -74,7 +98,7 @@ class CompGCN_DistMult(CompGCNBase):
 
 	def forward(self, sub, rel):
 
-		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop)
+		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop, self.disable_gnn_encoder)
 		obj_emb				= sub_emb * rel_emb
 
 		x = torch.mm(obj_emb, all_ent.transpose(1, 0))
@@ -85,7 +109,7 @@ class CompGCN_DistMult(CompGCNBase):
 
 class CompGCN_ConvE(CompGCNBase):
 	def __init__(self, edge_index, edge_type, params=None):
-		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
+		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params, self.disable_gnn_encoder)
 
 		self.bn0		= torch.nn.BatchNorm2d(1)
 		self.bn1		= torch.nn.BatchNorm2d(self.p.num_filt)
