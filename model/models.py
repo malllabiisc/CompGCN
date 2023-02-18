@@ -171,7 +171,7 @@ class CompGCN_ConvKB(CompGCNBase):
 			   we do this by using a convolution of embed_dim x 1 kernel, a stride of embed_dim and one filter
 			5. Then we apply a sigmoid function to the output
 
-		Inline comments descirbe the size of the tensor after manipulation with:
+		Inline comments describe the size of the tensor after manipulation with:
 			bs = batch_size
 			num_ent = Number of entities
 			embed_dim = embedding dimension
