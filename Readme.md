@@ -71,7 +71,7 @@ Given node and relation embeddings, CompGCN performs a composition operation φ(
   python run.py -score_func conve -opn corr
   
   ##### CompGCN with ConvKB ScoreFunction
-  python run.py -score_func convkb -init_dim 100 -num_filt 3
+  python run.py -score_func convkb -init_dim 100 -num_filt 3 -opn sub
   
   ##### Overall BEST:
   python run.py -name best_model -score_func conve -opn corr 
