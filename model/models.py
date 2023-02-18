@@ -177,9 +177,9 @@ class CompGCN_ConvKB(CompGCNBase):
 			embed_dim = embedding dimension
 		'''
 		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
-		sub_emb_repeat = sub_emb.unsqueeze(1).expand(-1, self.p.num_ent, -1).reshape((l, 1, self.p.num_ent * self.p.embed_dim))
-		rel_emb_repeat = rel_emb.unsqueeze(1).expand(-1, self.p.num_ent, -1).reshape((l, 1, self.p.num_ent * self.p.embed_dim))
-		all_ent = all_ent.unsqueeze(0).expand(l, -1, -1).view((l, 1, self.p.num_ent * self.p.embed_dim))
+		sub_emb_repeat = sub_emb.unsqueeze(1).expand(-1, self.p.num_ent, -1).reshape((self.p.batch_size, 1, self.p.num_ent * self.p.embed_dim))
+		rel_emb_repeat = rel_emb.unsqueeze(1).expand(-1, self.p.num_ent, -1).reshape((self.p.batch_size, 1, self.p.num_ent * self.p.embed_dim))
+		all_ent = all_ent.unsqueeze(0).expand(self.p.batch_size, -1, -1).view((self.p.batch_size, 1, self.p.num_ent * self.p.embed_dim))
 
 		x = torch.cat([sub_emb_repeat, rel_emb_repeat, all_ent], 1) 	#bs x 3 x num_ent * embed_dim
 		x = x.transpose(1, 2) 											#bs x num_ent * embed_dim x 3
@@ -187,6 +187,6 @@ class CompGCN_ConvKB(CompGCNBase):
 		conv_out = self.conv2d1(x) 										#bs x num_filt x num_ent * embed_dim x 1
 		conv_out = self.relu(conv_out)									#bs x num_filt x num_ent * embed_dim x 1
 		score = self.fake_fc_with_conv(conv_out) 						#bs x 1 x num_ent x 1
-		score = score.view(l, self.p.num_ent) 							#bs x num_ent
+		score = score.view(self.p.batch_size, self.p.num_ent) 							#bs x num_ent
 
 		return torch.sigmoid(score) 									#bs x num_ent
