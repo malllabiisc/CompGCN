@@ -79,16 +79,13 @@ def get_param(shape):
 	return param
 
 def com_mult(a, b):
-	r1, i1 = a[..., 0], a[..., 1]
-	r2, i2 = b[..., 0], b[..., 1]
-	return torch.stack([r1 * r2 - i1 * i2, r1 * i2 + i1 * r2], dim = -1)
+	return a * b
 
 def conj(a):
-	a[..., 1] = -a[..., 1]
-	return a
+	return a.conj()
 
 def cconv(a, b):
-	return torch.irfft(com_mult(torch.rfft(a, 1), torch.rfft(b, 1)), 1, signal_sizes=(a.shape[-1],))
+	return torch.fft.irfft(com_mult(torch.rfft(a), torch.rfft(b)), n=a.shape[-1])
 
 def ccorr(a, b):
-	return torch.irfft(com_mult(conj(torch.rfft(a, 1)), torch.rfft(b, 1)), 1, signal_sizes=(a.shape[-1],))
+	return torch.fft.irfft(com_mult(conj(torch.fft.rfft(a)), torch.fft.rfft(b)), n=a.shape[-1])
