@@ -95,6 +95,8 @@ We evaluated the CompGCN repository with the following configurations.
   # CompGCN (Composition: Circular Correlation)
   python run.py -score_func conve -opn corr
   
+  python run.py -score_func ctkgc -init_dim 100 -embed_dim 100 -opn sub -data codex_s
+  
   ##### Overall BEST:
   python run.py -name best_model -score_func conve -opn corr 
   ```
