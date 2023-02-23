@@ -139,7 +139,7 @@ class CompGCN_CTKGC(CompGCNBase):
 		Implements the CTKGC Scoring Function as in the paper https://link.springer.com/article/10.1007/s10489-021-02438-8 and writes to the console the total Parameter uesd in the Network
 
 		The scoring Function works by
-			1. Build the Entity-relation matrix by multiplying sub_emb and rel_emb.transpose(1,0)
+			1. Build the Entity-relation matrix by multiplying sub_emb.transpose(1.0) and rel_emb
 			2. Then we perform a Convolution on Entity-relation matrix
 			3. We Aggregate all the obtained feature,
 			4. Convert the above feature maps to a 1D Vector
