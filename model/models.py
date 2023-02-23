@@ -30,13 +30,14 @@ class CompGCNBase(BaseModel):
 		else:
 			if self.p.score_func == 'transe': 	self.init_rel = get_param((num_rel,   self.p.init_dim))
 			else: 					self.init_rel = get_param((num_rel*2, self.p.init_dim))
+		if self.disable_gnn_encoder == False:
 
-		if self.p.num_bases > 0:
-			self.conv1 = CompGCNConvBasis(self.p.init_dim, self.p.gcn_dim, num_rel, self.p.num_bases, act=self.act, params=self.p)
-			self.conv2 = CompGCNConv(self.p.gcn_dim,    self.p.embed_dim,    num_rel, act=self.act, params=self.p) if self.p.gcn_layer == 2 else None
-		else:
-			self.conv1 = CompGCNConv(self.p.init_dim, self.p.gcn_dim,      num_rel, act=self.act, params=self.p)
-			self.conv2 = CompGCNConv(self.p.gcn_dim,    self.p.embed_dim,    num_rel, act=self.act, params=self.p) if self.p.gcn_layer == 2 else None
+			if self.p.num_bases > 0:
+				self.conv1 = CompGCNConvBasis(self.p.init_dim, self.p.gcn_dim, num_rel, self.p.num_bases, act=self.act, params=self.p)
+				self.conv2 = CompGCNConv(self.p.gcn_dim,    self.p.embed_dim,    num_rel, act=self.act, params=self.p) if self.p.gcn_layer == 2 else None
+			else:
+				self.conv1 = CompGCNConv(self.p.init_dim, self.p.gcn_dim,      num_rel, act=self.act, params=self.p)
+				self.conv2 = CompGCNConv(self.p.gcn_dim,    self.p.embed_dim,    num_rel, act=self.act, params=self.p) if self.p.gcn_layer == 2 else None
 
 		self.register_parameter('bias', Parameter(torch.zeros(self.p.num_ent)))
 
@@ -73,6 +74,11 @@ class CompGCN_DistMult(CompGCNBase):
 	def __init__(self, edge_index, edge_type, params=None):
 		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
 		self.drop = torch.nn.Dropout(self.p.hid_drop)
+		total_params = sum(
+			param.numel() for param in self.parameters()
+		)
+		print("Total Parameter: " + str(total_params))
+
 
 	def forward(self, sub, rel):
 
@@ -139,7 +145,7 @@ class CompGCN_CTKGC(CompGCNBase):
 		Implements the CTKGC Scoring Function as in the paper https://link.springer.com/article/10.1007/s10489-021-02438-8 and writes to the console the total Parameter uesd in the Network
 
 		The scoring Function works by
-			1. Build the Entity-relation matrix by multiplying sub_emb and rel_emb.transpose(1,0)
+			1. Build the Entity-relation matrix by multiplying sub_emb.transpose(1,0) and rel_emb
 			2. Then we perform a Convolution on Entity-relation matrix
 			3. We Aggregate all the obtained feature,
 			4. Convert the above feature maps to a 1D Vector
