@@ -12,7 +12,7 @@ class BaseModel(torch.nn.Module):
 
 	def loss(self, pred, true_label):
 		return self.bceloss(pred, true_label)
-		
+
 class CompGCNBase(BaseModel):
 	def __init__(self, edge_index, edge_type, num_rel, params=None):
 		super(CompGCNBase, self).__init__(params)
@@ -24,21 +24,21 @@ class CompGCNBase(BaseModel):
 		self.device		= self.edge_index.device
 		self.disable_gnn_encoder = self.p.disable_gnn_encoder
 
-
 		if self.p.num_bases > 0:
 			self.init_rel  = get_param((self.p.num_bases,   self.p.init_dim))
 		else:
 			if self.p.score_func == 'transe': 	self.init_rel = get_param((num_rel,   self.p.init_dim))
 			else: 					self.init_rel = get_param((num_rel*2, self.p.init_dim))
 
-		if self.p.num_bases > 0:
-			self.conv1 = CompGCNConvBasis(self.p.init_dim, self.p.gcn_dim, num_rel, self.p.num_bases, act=self.act, params=self.p)
-			self.conv2 = CompGCNConv(self.p.gcn_dim,    self.p.embed_dim,    num_rel, act=self.act, params=self.p) if self.p.gcn_layer == 2 else None
-		else:
-			self.conv1 = CompGCNConv(self.p.init_dim, self.p.gcn_dim,      num_rel, act=self.act, params=self.p)
-			self.conv2 = CompGCNConv(self.p.gcn_dim,    self.p.embed_dim,    num_rel, act=self.act, params=self.p) if self.p.gcn_layer == 2 else None
+		if not self.disable_gnn_encoder:
+			if self.p.num_bases > 0:
+				self.conv1 = CompGCNConvBasis(self.p.init_dim, self.p.gcn_dim, num_rel, self.p.num_bases, act=self.act, params=self.p)
+				self.conv2 = CompGCNConv(self.p.gcn_dim,    self.p.embed_dim,    num_rel, act=self.act, params=self.p) if self.p.gcn_layer == 2 else None
+			else:
+				self.conv1 = CompGCNConv(self.p.init_dim, self.p.gcn_dim,      num_rel, act=self.act, params=self.p)
+				self.conv2 = CompGCNConv(self.p.gcn_dim,    self.p.embed_dim,    num_rel, act=self.act, params=self.p) if self.p.gcn_layer == 2 else None
 
-		self.register_parameter('bias', Parameter(torch.zeros(self.p.num_ent)))
+			self.register_parameter('bias', Parameter(torch.zeros(self.p.num_ent)))
 
 	def forward_base(self, sub, rel, drop1, drop2):
 		"""
@@ -85,7 +85,7 @@ class CompGCN_TransE(CompGCNBase):
 		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop)
 		obj_emb				= sub_emb + rel_emb
 
-		x	= self.p.gamma - torch.norm(obj_emb.unsqueeze(1) - all_ent, p=1, dim=2)		
+		x	= self.p.gamma - torch.norm(obj_emb.unsqueeze(1) - all_ent, p=1, dim=2)
 		score	= torch.sigmoid(x)
 
 		return score
@@ -113,7 +113,7 @@ class CompGCN_ConvE(CompGCNBase):
 		self.bn0		= torch.nn.BatchNorm2d(1)
 		self.bn1		= torch.nn.BatchNorm2d(self.p.num_filt)
 		self.bn2		= torch.nn.BatchNorm1d(self.p.embed_dim)
-		
+
 		self.hidden_drop	= torch.nn.Dropout(self.p.hid_drop)
 		self.hidden_drop2	= torch.nn.Dropout(self.p.hid_drop2)
 		self.feature_drop	= torch.nn.Dropout(self.p.feat_drop)
