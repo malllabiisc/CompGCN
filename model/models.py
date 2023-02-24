@@ -40,7 +40,7 @@ class CompGCNBase(BaseModel):
 
 		self.register_parameter('bias', Parameter(torch.zeros(self.p.num_ent)))
 
-	def forward_base(self, sub, rel, drop1, drop2, disable_gnn_encoder: bool):
+	def forward_base(self, sub, rel, drop1, drop2):
 		"""
 
 		Parameters
@@ -55,7 +55,7 @@ class CompGCNBase(BaseModel):
 		-------
 
 		"""
-		if disable_gnn_encoder:
+		if self.disable_gnn_encoder:
 			r = self.init_rel if self.p.score_func != 'transe' else torch.cat([self.init_rel, -self.init_rel], dim=0)
 			x = self.init_embed
 			x = drop1(x)
@@ -82,7 +82,7 @@ class CompGCN_TransE(CompGCNBase):
 
 	def forward(self, sub, rel):
 
-		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop, self.disable_gnn_encoder)
+		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop)
 		obj_emb				= sub_emb + rel_emb
 
 		x	= self.p.gamma - torch.norm(obj_emb.unsqueeze(1) - all_ent, p=1, dim=2)		
@@ -97,7 +97,7 @@ class CompGCN_DistMult(CompGCNBase):
 
 	def forward(self, sub, rel):
 
-		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop, self.disable_gnn_encoder)
+		sub_emb, rel_emb, all_ent	= self.forward_base(sub, rel, self.drop, self.drop)
 		obj_emb				= sub_emb * rel_emb
 
 		x = torch.mm(obj_emb, all_ent.transpose(1, 0))
