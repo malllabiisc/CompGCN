@@ -136,7 +136,7 @@ class CompGCN_ConvE(CompGCNBase):
 
 
 class CompGCN_CTKGC(CompGCNBase):
-		'''
+		"""
 		Implements the CTKGC Scoring Function as in the paper https://link.springer.com/article/10.1007/s10489-021-02438-8 and writes to the console the total Parameter uesd in the Network
 
 		The scoring Function works by
@@ -147,9 +147,9 @@ class CompGCN_CTKGC(CompGCNBase):
 			5. We project our 1D vector onto a candidate objects to obtain the predicted object embedding
 				1. We do 5. for all our entities (candidate objects)
 			5. Use the sigmoid function to calculate the score of the object embedding
-		'''
+		"""
 		def __init__(self, edge_index, edge_type, params=None):
-			'''Init ComCGN Base and all the layers used in the Scoring function CTKGC'''
+			"""Init ComCGN Base and all the layers used in the Scoring function CTKGC"""
 			super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
 
 			self.drop = torch.nn.Dropout(self.p.hid_drop)
@@ -174,7 +174,7 @@ class CompGCN_CTKGC(CompGCNBase):
 
 		# Documentation
 		def forward(self, sub, rel):
-			'''
+			"""
 
 			Parameters
 			----------
@@ -189,7 +189,7 @@ class CompGCN_CTKGC(CompGCNBase):
 				bs = batch_size
 				num_ent = Number of entities
 				embed_dim = embedding dimension
-			'''
+			"""
 
 			sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop,self.drop)
 			sub_emb = sub_emb.view(-1, self.p.embed_dim, 1)
