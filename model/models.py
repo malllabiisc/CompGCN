@@ -108,7 +108,7 @@ class CompGCN_DistMult(CompGCNBase):
 
 class CompGCN_ConvE(CompGCNBase):
 	def __init__(self, edge_index, edge_type, params=None):
-		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params, self.disable_gnn_encoder)
+		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
 
 		self.bn0		= torch.nn.BatchNorm2d(1)
 		self.bn1		= torch.nn.BatchNorm2d(self.p.num_filt)
