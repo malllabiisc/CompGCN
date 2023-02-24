@@ -131,6 +131,7 @@ class CompGCN_ConvE(CompGCNBase):
 		score = torch.sigmoid(x)
 		return score
 
+
 	# Documentation
 
 
@@ -214,3 +215,67 @@ class CompGCN_CTKGC(CompGCNBase):
 			prediction += self.bias.expand_as(prediction)
 			score = torch.sigmoid(prediction)
 			return score
+
+class CompGCN_ConvKB(CompGCNBase):
+	'''
+	Implements the ConvKB Scoring Function and writes to the console the total Parameter used in the Network
+
+	The scoring Function works by, first concatenating the embedding of the head,relation and tail.
+	Then we apply a convolution, and finally we calculate the dot product of the convolution and the weight w.
+	'''
+	def __init__(self, edge_index, edge_type, params=None):
+		'''Init the ComGCN Base and all the  layer used in the Score function ConvKB'''
+		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
+		self.drop = torch.nn.Dropout(self.p.hid_drop)
+		self.relu = torch.nn.ReLU()
+		self.conv2d1 = torch.nn.Conv2d(1, out_channels=self.p.num_filt, kernel_size=(1, 3), stride=1, bias=True)
+		self.fake_fc_with_conv = torch.nn.Conv2d(self.p.num_filt,out_channels = 1, kernel_size=(self.p.embed_dim, 1), stride=self.p.embed_dim, bias=False)
+
+		#Prints the number of parameter in the network to the console
+		total_params = sum(
+			param.numel() for param in self.parameters()
+		)
+		print("Total Parameter: " + str(total_params))
+
+	def forward(self, sub,rel):
+		'''
+
+		Parameters
+		----------
+		sub: idx of entities
+		rel: idx of relation
+
+		Returns
+		-------
+		a list of entities and the percentage of there being a relation of rel between sub and our entities
+
+		we first create an array that repeats sub_emb and rel_emb, num_ent(Number of Entities) times
+		then we reshape all our array sub_emb_repeat, rel_emb_repeat and all_ent to fit
+			1. concatenated the three tensors/arrays
+			2. apply a convolution with a 1x3 kernel
+			3. apply relu
+			4. we calculate the dot product of a weight w (which is same for all entities) and the output of the convolution,
+			   we do this by using a convolution of embed_dim x 1 kernel, a stride of embed_dim and one filter
+			5. Then we apply a sigmoid function to the output
+
+		Inline comments describe the size of the tensor after manipulation with:
+			bs = batch_size
+			num_ent = Number of entities
+			embed_dim = embedding dimension
+		'''
+		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
+		l = len(sub)
+		sub_emb_repeat = sub_emb.unsqueeze(1).expand(-1, self.p.num_ent, -1).reshape((l, 1, self.p.num_ent * self.p.embed_dim))
+		rel_emb_repeat = rel_emb.unsqueeze(1).expand(-1, self.p.num_ent, -1).reshape((l, 1, self.p.num_ent * self.p.embed_dim))
+		all_ent = all_ent.unsqueeze(0).expand(l, -1, -1).view((l, 1, self.p.num_ent * self.p.embed_dim))
+
+		x = torch.cat([sub_emb_repeat, rel_emb_repeat, all_ent], 1) 	#bs x 3 x num_ent * embed_dim
+		x = x.transpose(1, 2) 											#bs x num_ent * embed_dim x 3
+		x = x.unsqueeze(1)  											#bs x 1 x num_ent * embed_dim x 3
+		conv_out = self.conv2d1(x) 										#bs x num_filt x num_ent * embed_dim x 1
+		conv_out = self.relu(conv_out)									#bs x num_filt x num_ent * embed_dim x 1
+		score = self.fake_fc_with_conv(conv_out) 						#bs x 1 x num_ent x 1
+		score = score.view(l, self.p.num_ent) 							#bs x num_ent
+
+		return torch.sigmoid(score) 									#bs x num_ent
+
