@@ -96,7 +96,7 @@ We evaluated the CompGCN repository with the following configurations.
   python run.py -score_func conve -opn corr
   
   #####  CompGCN with CTKGC ScoreFunction
-  python run.py -score_func ctkgc -init_dim 100 -embed_dim 100 -opn sub -data codex_s
+  python run.py -score_func ctkgc -init_dim 100 -embed_dim 100 -opn sub -data codex-s
 
   ##### CompGCN with ConvKB ScoreFunction
   python run.py -score_func convkb -init_dim 100 -num_filt 3 -opn sub
