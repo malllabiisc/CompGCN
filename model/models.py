@@ -149,7 +149,7 @@ class CompGCN_CTKGC(CompGCNBase):
 			6. Use the sigmoid function to calculate the score of the object embedding
 		"""
 		def __init__(self, edge_index, edge_type, params=None):
-			"""Init ComCGN Base and all the layers used in the Scoring function CTKGC"""
+			"""Init ComGCN Base and all the layers used in the Scoring function CTKGC"""
 			super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
 
 			self.drop = torch.nn.Dropout(self.p.hid_drop)
