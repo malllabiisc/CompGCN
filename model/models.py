@@ -137,7 +137,7 @@ class CompGCN_ConvE(CompGCNBase):
 
 class CompGCN_CTKGC(CompGCNBase):
 		"""
-		Implements the CTKGC Scoring Function as in the paper https://link.springer.com/article/10.1007/s10489-021-02438-8 and writes to the console the total Parameter uesd in the Network
+		Implements the CTKGC Scoring Function as in the paper https://link.springer.com/article/10.1007/s10489-021-02438-8 and writes to the console the total parameter used in the network
 
 		The scoring Function works by
 			1. Build the Entity-relation matrix by multiplying sub_emb.transpose(1.0) and rel_emb
