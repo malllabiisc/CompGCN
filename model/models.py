@@ -38,7 +38,7 @@ class CompGCNBase(BaseModel):
 				self.conv1 = CompGCNConv(self.p.init_dim, self.p.gcn_dim,      num_rel, act=self.act, params=self.p)
 				self.conv2 = CompGCNConv(self.p.gcn_dim,    self.p.embed_dim,    num_rel, act=self.act, params=self.p) if self.p.gcn_layer == 2 else None
 
-			self.register_parameter('bias', Parameter(torch.zeros(self.p.num_ent)))
+		self.register_parameter('bias', Parameter(torch.zeros(self.p.num_ent)))
 
 	def forward_base(self, sub, rel, drop1, drop2):
 		"""
