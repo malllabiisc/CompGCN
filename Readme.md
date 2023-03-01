@@ -95,8 +95,11 @@ We evaluated the CompGCN repository with the following configurations.
   # CompGCN (Composition: Circular Correlation)
   python run.py -score_func conve -opn corr
   
+  # CompGCN (Composition: Subtraction) with disabled GNN encoder
+  python run.py -score_func conve -opn sub -ker_sz 5 -data codex-s  -k_w 10 -k_h 10 -gcn_dim 100 -disable_gnn_encoder 1
+
   ##### CompGCN with ConvKB ScoreFunction
-  python run.py -score_func convkb -init_dim 100 -num_filt 3 -opn sub
+  python run.py -score_func convkb -init_dim 100 -embed_dim 100 -num_filt 3 -opn sub
   
   ##### Overall BEST:
   python run.py -name best_model -score_func conve -opn corr 
