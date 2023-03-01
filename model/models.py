@@ -195,7 +195,6 @@ class CompGCN_CTKGC(CompGCNBase):
 			print("Total Parameter: " + str(total_params))
 
 
-		# Documentation
 		def forward(self, sub, rel):
 			"""
 
