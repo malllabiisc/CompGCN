@@ -176,8 +176,8 @@ class CompGCN_CTKGC(CompGCNBase):
 			super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
 
 			self.drop = torch.nn.Dropout(self.p.hid_drop)
-			self.hid_drop0 = torch.nn.Dropout(self.p.hid_drop)
-			self.fea_drop0 = torch.nn.Dropout2d(self.p.feat_drop)
+			self.hid_drop = torch.nn.Dropout(self.p.hid_drop)
+			self.feat_drop = torch.nn.Dropout2d(self.p.feat_drop)
 
 			filters = 32
 			kernelsize = (3, self.p.embed_dim)
@@ -225,11 +225,11 @@ class CompGCN_CTKGC(CompGCNBase):
 			conv_out = self.conv2d0(conv_in) 							# bs x filters x embed_dim-2 x 1
 			conv_out = self.bn1(conv_out)
 			conv_out = F.relu(conv_out)
-			conv_out = self.fea_drop0(conv_out)
+			conv_out = self.feat_drop(conv_out)
 
 			linear_in = conv_out.view(conv_out.shape[0],-1) 			# bs x hidden_size
 			linear_out = self.fc(linear_in) 							# bs x embed_dim
-			linear_out = self.hid_drop0(linear_out)
+			linear_out = self.hid_drop(linear_out)
 			linear_out = self.bn2(linear_out)
 			linear_out = F.relu(linear_out)
 
