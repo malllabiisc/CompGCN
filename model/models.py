@@ -214,3 +214,16 @@ class CompGCN_ConvKB(CompGCNBase):
 		score = score.view(l, self.p.num_ent) 							#bs x num_ent
 
 		return torch.sigmoid(score) 									#bs x num_ent
+
+
+class CompGCN_Unstructured(CompGCNBase):
+	def __init__(self, edge_index, edge_type, params=None):
+		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
+		self.drop = torch.nn.Dropout(self.p.hid_drop)
+
+	def forward(self, sub, rel):
+		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
+		# sub_emb = h
+		# rel_emb = r
+		# output: should be the size of [all_ent.size, 1]
+		return

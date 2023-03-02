@@ -176,10 +176,11 @@ class Runner(object):
 		"""
 		model_name = '{}_{}'.format(model, score_func)
 
-		if   model_name.lower()	== 'compgcn_transe': 	model = CompGCN_TransE(self.edge_index, self.edge_type, params=self.p)
-		elif model_name.lower()	== 'compgcn_distmult': 	model = CompGCN_DistMult(self.edge_index, self.edge_type, params=self.p)
-		elif model_name.lower()	== 'compgcn_conve': 	model = CompGCN_ConvE(self.edge_index, self.edge_type, params=self.p)
-		elif model_name.lower() == 'compgcn_convkb':    model = CompGCN_ConvKB(self.edge_index, self.edge_type, params=self.p)
+		if   model_name.lower()	== 'compgcn_transe': 	   model = CompGCN_TransE(self.edge_index, self.edge_type, params=self.p)
+		elif model_name.lower()	== 'compgcn_distmult': 	   model = CompGCN_DistMult(self.edge_index, self.edge_type, params=self.p)
+		elif model_name.lower()	== 'compgcn_conve': 	   model = CompGCN_ConvE(self.edge_index, self.edge_type, params=self.p)
+		elif model_name.lower() == 'compgcn_convkb':       model = CompGCN_ConvKB(self.edge_index, self.edge_type, params=self.p)
+		elif model_name.lower() == 'compgcn_unstructured': model = CompGCN_Unstructured(self.edge_index, self.edge_type, params=self.p)
 		else: raise NotImplementedError
 
 		model.to(self.device)
