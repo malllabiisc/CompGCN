@@ -207,10 +207,7 @@ class CompGCN_CTKGC(CompGCNBase):
 			-------
 			a list of entities and the percentage of there being a relation of rel between sub and our entities
 
-			Inline comments describe the size of the tensor after manipulation with:
-				bs = batch_size
-				num_ent = Number of entities
-				embed_dim = embedding dimension
+			Inline comments describe the size of the tensor after manipulation: bs = bach_size
 			"""
 
 			sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop,self.drop)
@@ -219,21 +216,21 @@ class CompGCN_CTKGC(CompGCNBase):
 
 			x = torch.bmm(sub_emb,rel_emb)
 
-			x = x.view(-1, 1, self.p.embed_dim, self.p.embed_dim) 		# bs x 1 x self.p.embed-dim x self.p.embed-dim
+			x = x.view(-1, 1, self.p.embed_dim, self.p.embed_dim) 		# bs x 1 x self.p.embed_dim x self.p.embed_dim
 
 			conv_in = self.bn0(x)
-			conv_out = self.conv2d0(conv_in) 							# bs x filters x embed_dim-2 x 1
+			conv_out = self.conv2d0(conv_in) 							# bs x filters x self.p.embed_dim x 1
 			conv_out = self.bn1(conv_out)
 			conv_out = F.relu(conv_out)
 			conv_out = self.feat_drop(conv_out)
 
 			linear_in = conv_out.view(conv_out.shape[0],-1) 			# bs x hidden_size
-			linear_out = self.fc(linear_in) 							# bs x embed_dim
+			linear_out = self.fc(linear_in) 							# bs x self.p.embed_dim
 			linear_out = self.hid_drop(linear_out)
 			linear_out = self.bn2(linear_out)
 			linear_out = F.relu(linear_out)
 
-			prediction = torch.mm(linear_out, all_ent.transpose(1,0)) 	# bs x num_ent
+			prediction = torch.mm(linear_out, all_ent.transpose(1,0)) 	# bs x self.p.num_ent
 			prediction += self.bias.expand_as(prediction)
 			score = torch.sigmoid(prediction)
 			return score
