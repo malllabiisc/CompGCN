@@ -223,7 +223,7 @@ class CompGCN_Unstructured(CompGCNBase):
 
 	def forward(self, sub, rel):
 		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
-		# sub_emb = h
-		# rel_emb = r
-		# output: should be the size of [all_ent.size, 1]
-		return
+
+		x = self.p.gamma - torch.norm(sub_emb.unsqueeze(1) - all_ent, p=1, dim=2)
+		score = torch.sigmoid(x)
+		return score
