@@ -225,7 +225,7 @@ class CompGCN_Unstructured(CompGCNBase):
 	"""
 	def __init__(self, edge_index, edge_type, params=None):
 		"""
-		Init the ComGCN Base and all the layer used in the score function Unstructured.
+		Init the CompGCN Base and all the layer used in the score function Unstructured.
 		"""
 		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
 		self.drop = torch.nn.Dropout(self.p.hid_drop)
