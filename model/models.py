@@ -298,3 +298,36 @@ class CompGCN_ConvKB(CompGCNBase):
 
 		return torch.sigmoid(score) 									#bs x num_ent
 
+class CompGCN_Unstructured(CompGCNBase):
+	"""
+	Implements the Unstructured scoring function.
+
+	The Unstructured scoring function cannot take relationships into account, so it assumes, that head and tail entity
+	vectors are similar.
+	"""
+	def __init__(self, edge_index, edge_type, params=None):
+		"""
+		Init the CompGCN Base and all the layer used in the score function Unstructured.
+		"""
+		super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
+		self.drop = torch.nn.Dropout(self.p.hid_drop)
+
+	def forward(self, sub, rel):
+		"""
+
+		Parameters
+		----------
+		sub: idx of entities
+		rel: idx of relation
+
+		Returns
+		-------
+		a list of entities and the percentage of there being a relation of rel between sub and our entities
+
+		We simply subtract the vector of the tail entity from the vector of the head entity.
+		"""
+		sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop, self.drop)
+
+		x = self.p.gamma - torch.norm(sub_emb.unsqueeze(1) - all_ent, p=1, dim=2)
+		score = torch.sigmoid(x)
+		return score

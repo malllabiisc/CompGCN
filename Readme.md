@@ -104,6 +104,9 @@ We evaluated the CompGCN repository with the following configurations.
   ##### CompGCN with ConvKB ScoreFunction
   python run.py -score_func convkb -init_dim 100 -embed_dim 100 -num_filt 3 -opn sub
   
+  ##### CompGCN with Unstructured Score Function
+  python run.py -score_func unstructured -opn sub -gamma 9 -hid_drop 0.1 -init_dim 200
+  
   ##### Overall BEST:
   python run.py -name best_model -score_func conve -opn corr 
   ```
