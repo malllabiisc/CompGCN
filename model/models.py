@@ -154,10 +154,6 @@ class CompGCN_ConvE(CompGCNBase):
 		score = torch.sigmoid(x)
 		return score
 
-
-	# Documentation
-
-
 class CompGCN_CTKGC(CompGCNBase):
 		"""
 		Implements the CTKGC Scoring Function as in the paper https://link.springer.com/article/10.1007/s10489-021-02438-8 and writes to the console the total parameter used in the network
