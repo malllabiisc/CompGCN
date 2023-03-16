@@ -98,6 +98,9 @@ We evaluated the CompGCN repository with the following configurations.
   # CompGCN (Composition: Subtraction) with disabled GNN encoder
   python run.py -score_func conve -opn sub -ker_sz 5 -data codex-s  -k_w 10 -k_h 10 -gcn_dim 100 -disable_gnn_encoder 1
 
+  #####  CompGCN with CTKGC ScoreFunction
+  python run.py -score_func ctkgc -init_dim 100 -embed_dim 100 -opn sub -data codex-s
+
   ##### CompGCN with ConvKB ScoreFunction
   python run.py -score_func convkb -init_dim 100 -embed_dim 100 -num_filt 3 -opn sub
   

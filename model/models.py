@@ -1,3 +1,5 @@
+import torch.nn
+
 from helper import *
 from model.compgcn_conv import CompGCNConv
 from model.compgcn_conv_basis import CompGCNConvBasis
@@ -152,6 +154,83 @@ class CompGCN_ConvE(CompGCNBase):
 		score = torch.sigmoid(x)
 		return score
 
+class CompGCN_CTKGC(CompGCNBase):
+		"""
+		Implements the CTKGC Scoring Function as in the paper https://link.springer.com/article/10.1007/s10489-021-02438-8 and writes to the console the total parameter used in the network
+
+		The scoring Function works by
+			1. Build the Entity-relation matrix by multiplying sub_emb.transpose(1.0) and rel_emb
+			2. Then we perform a Convolution on Entity-relation matrix
+			3. We Aggregate all the obtained feature,
+			4. Convert the above feature maps to a 1D Vector
+			5. We project our 1D vector onto a candidate objects to obtain the predicted object embedding
+				1. We do 5. for all our entities (candidate objects)
+			6. Use the sigmoid function to calculate the score of the object embedding
+		"""
+		def __init__(self, edge_index, edge_type, params=None):
+			"""Init ComGCN Base and all the layers used in the Scoring function CTKGC"""
+			super(self.__class__, self).__init__(edge_index, edge_type, params.num_rel, params)
+
+			self.drop = torch.nn.Dropout(self.p.hid_drop)
+			self.hid_drop = torch.nn.Dropout(self.p.hid_drop)
+			self.feat_drop = torch.nn.Dropout2d(self.p.feat_drop)
+
+			filters = 32
+			kernelsize = (3, self.p.embed_dim)
+			hidden_size = filters *(self.p.embed_dim - kernelsize[0] +1) * (self.p.embed_dim - kernelsize[1] + 1)
+			self.conv2d0 = torch.nn.Conv2d(1, filters, kernelsize, 1, 0, bias=True)
+
+			self.bn0 = torch.nn.BatchNorm2d(1)
+			self.bn1 = torch.nn.BatchNorm2d(filters)
+			self.bn2 = torch.nn.BatchNorm1d(self.p.embed_dim)
+
+			self.fc = torch.nn.Linear(hidden_size, self.p.embed_dim)
+			total_params = sum(
+				param.numel() for param in self.parameters()
+			)
+			print("Total Parameter: " + str(total_params))
+
+
+		def forward(self, sub, rel):
+			"""
+
+			Parameters
+			----------
+			sub: idx of entities
+			rel: idx of relation
+
+			Returns
+			-------
+			a list of entities and the percentage of there being a relation of rel between sub and our entities
+
+			Inline comments describe the size of the tensor after manipulation: bs = bach_size
+			"""
+
+			sub_emb, rel_emb, all_ent = self.forward_base(sub, rel, self.drop,self.drop)
+			sub_emb = sub_emb.view(-1, self.p.embed_dim, 1)
+			rel_emb = rel_emb.view(-1, 1, self.p.embed_dim)
+
+			x = torch.bmm(sub_emb,rel_emb)
+
+			x = x.view(-1, 1, self.p.embed_dim, self.p.embed_dim) 		# bs x 1 x self.p.embed_dim x self.p.embed_dim
+
+			conv_in = self.bn0(x)
+			conv_out = self.conv2d0(conv_in) 							# bs x filters x self.p.embed_dim x 1
+			conv_out = self.bn1(conv_out)
+			conv_out = F.relu(conv_out)
+			conv_out = self.feat_drop(conv_out)
+
+			linear_in = conv_out.view(conv_out.shape[0],-1) 			# bs x hidden_size
+			linear_out = self.fc(linear_in) 							# bs x self.p.embed_dim
+			linear_out = self.hid_drop(linear_out)
+			linear_out = self.bn2(linear_out)
+			linear_out = F.relu(linear_out)
+
+			prediction = torch.mm(linear_out, all_ent.transpose(1,0)) 	# bs x self.p.num_ent
+			prediction += self.bias.expand_as(prediction)
+			score = torch.sigmoid(prediction)
+			return score
+
 class CompGCN_ConvKB(CompGCNBase):
 	'''
 	Implements the ConvKB Scoring Function and writes to the console the total Parameter used in the Network
@@ -214,7 +293,6 @@ class CompGCN_ConvKB(CompGCNBase):
 		score = score.view(l, self.p.num_ent) 							#bs x num_ent
 
 		return torch.sigmoid(score) 									#bs x num_ent
-
 
 class CompGCN_Unstructured(CompGCNBase):
 	"""

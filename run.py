@@ -181,6 +181,7 @@ class Runner(object):
 		elif model_name.lower()	== 'compgcn_conve': 	   model = CompGCN_ConvE(self.edge_index, self.edge_type, params=self.p)
 		elif model_name.lower() == 'compgcn_convkb':       model = CompGCN_ConvKB(self.edge_index, self.edge_type, params=self.p)
 		elif model_name.lower() == 'compgcn_unstructured': model = CompGCN_Unstructured(self.edge_index, self.edge_type, params=self.p)
+		elif model_name.lower() == 'compgcn_ctkgc':       model = CompGCN_CTKGC(self.edge_index, self.edge_type, params=self.p)
 		else: raise NotImplementedError
 
 		model.to(self.device)
