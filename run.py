@@ -274,10 +274,10 @@ class Runner(object):
 		
 		Returns
 		-------
-		resutls:			The evaluation results containing the following:
+		results:			The evaluation results containing the following:
 			results['mr']:         	Average of ranks_left and ranks_right
 			results['mrr']:         Mean Reciprocal Rank
-			results['hits@k']:      Probability of getting the correct preodiction in top-k ranks based on predicted score
+			results['hits@k']:      Probability of getting the correct prediction in top-k ranks based on predicted score
 
 		"""
 		left_results  = self.predict(split=split, mode='tail_batch')
@@ -364,7 +364,20 @@ class Runner(object):
 		loss = np.mean(losses)
 		self.logger.info('[Epoch:{}]:  Training Loss:{:.4}\n'.format(epoch, loss))
 		return loss
+	
+	def evaluteOnly(self):
+		"""
+		Function to evaluate the model on the test dataset
 
+		The results get saved into the log
+		"""
+
+		save_path = os.path.join('./checkpoints', self.p.name)
+		self.load_model(save_path)
+		self.logger.info('Successfully Loaded previous model')
+		results = self.evaluate('test', 0)
+		self.logger.info(f' MR:{results["mr"]},MRR:{results["mrr"]},hits@1:{results["hits@1"]},hits@3:{results["hits@3"]},hits@10:{results["hits@10"]}')
+		print(f' MR:{results["mr"]},MRR:{results["mrr"]},hits@1:{results["hits@1"]},hits@3:{results["hits@3"]},hits@10:{results["hits@10"]}')
 
 	def fit(self):
 		"""
@@ -399,7 +412,7 @@ class Runner(object):
 				if kill_cnt % 10 == 0 and self.p.gamma > 5:
 					self.p.gamma -= 5 
 					self.logger.info('Gamma decay on saturation, updated value of gamma: {}'.format(self.p.gamma))
-				if kill_cnt > 25: 
+				if kill_cnt > 25:
 					self.logger.info("Early Stopping!!")
 					break
 
@@ -408,6 +421,7 @@ class Runner(object):
 		self.logger.info('Loading best model, Evaluating on Test data')
 		self.load_model(save_path)
 		test_results = self.evaluate('test', epoch)
+		self.logger.info(test_results)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Parser For Arguments', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -429,6 +443,7 @@ if __name__ == '__main__':
 	parser.add_argument('-seed',            dest='seed',            default=41504,  type=int,     	help='Seed for randomization')
 
 	parser.add_argument('-restore',         dest='restore',         action='store_true',            help='Restore from the previously saved model')
+	parser.add_argument('-evaluate', 		dest='evaluate', 		action='store_true', 			help='Only evaluating a given model, model name must be available in the checkpoints folder')
 	parser.add_argument('-bias',            dest='bias',            action='store_true',            help='Whether to use bias in the model')
 
 	parser.add_argument('-num_bases',	dest='num_bases', 	default=-1,   	type=int, 	help='Number of basis relation vectors to use')
@@ -452,7 +467,9 @@ if __name__ == '__main__':
 	parser.add_argument('-config',          dest='config_dir',      default='./config/',            help='Config directory')
 	args = parser.parse_args()
 
-	if not args.restore: args.name = args.name + '_' + time.strftime('%d_%m_%Y') + '_' + time.strftime('%H_%M_%S')
+	if not args.restore:
+		if not args.evaluate:
+			args.name = args.name + '_' + time.strftime('%d_%m_%Y') + '_' + time.strftime('%H_%M_%S')
 
 	set_gpu(args.gpu)
 	np.random.seed(args.seed)
@@ -460,4 +477,7 @@ if __name__ == '__main__':
 	print(f'Is the GPU available: {torch.cuda.is_available()}')
 
 	model = Runner(args)
-	model.fit()
+	if args.evaluate:
+		model.evaluteOnly()
+	else:
+		model.fit()
