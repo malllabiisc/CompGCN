@@ -1,3 +1,5 @@
+import torch
+
 from helper import *
 from data_loader import *
 
@@ -244,18 +246,20 @@ class Runner(object):
 		}
 		torch.save(state, save_path)
 
-	def load_model(self, load_path):
+	def load_model(self, load_path, enable_cpu_mapping: bool = False):
 		"""
 		Function to load a saved model
 
 		Parameters
 		----------
 		load_path: path to the saved model
-		
-		Returns
+		enable_cpu_mapping when enabled the loaded model should be mapped to cpu
 		-------
 		"""
-		state			= torch.load(load_path)
+		if enable_cpu_mapping:
+			state		= torch.load(load_path, map_location=torch.device('cpu'))
+		else:
+			state		= torch.load(load_path, map_location=torch.device('cuda'))
 		state_dict		= state['state_dict']
 		self.best_val		= state['best_val']
 		self.best_val_mrr	= self.best_val['mrr'] 
@@ -393,7 +397,7 @@ class Runner(object):
 		save_path = os.path.join('./checkpoints', self.p.name)
 
 		if self.p.restore:
-			self.load_model(save_path)
+			self.load_model(save_path, not torch.cuda.is_available())
 			self.logger.info('Successfully Loaded previous model')
 
 		kill_cnt = 0
@@ -419,7 +423,7 @@ class Runner(object):
 			self.logger.info('[Epoch {}]: Training Loss: {:.5}, Valid MRR: {:.5}\n\n'.format(epoch, train_loss, self.best_val_mrr))
 
 		self.logger.info('Loading best model, Evaluating on Test data')
-		self.load_model(save_path)
+		self.load_model(save_path, not torch.cuda.is_available())
 		test_results = self.evaluate('test', epoch)
 		self.logger.info(test_results)
 
