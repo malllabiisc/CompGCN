@@ -54,6 +54,16 @@ We evaluated the CompGCN repository with the following configurations.
   pip install torch-scatter==2.1.0 -f https://data.pyg.org/whl/torch-1.13.0+cu117.html
   ```
 
+## pyTorch 1.13.1, Python 3.9, CPU
+- Install all the requirements from `pip install -r requirements.txt`.
+  - Note: If issues arise installing torch/torch_scatter or when executing the code, try to install them manually, with the following command:
+  ```commandline
+  pip install torch==1.13.1 --extra-index-url https://download.pytorch.org/whl/cpu
+  ```
+  ```commandline
+  pip install torch-scatter==2.1.0 -f https://data.pyg.org/whl/torch-1.13.1+cpu.html
+  ```
+
 # Dataset:
 
 - We use the codex-l, codex-m and codex-s datasets for knowledge graph link prediction. 
