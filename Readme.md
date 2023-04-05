@@ -64,6 +64,16 @@ We evaluated the CompGCN repository with the following configurations.
   pip install torch-scatter==2.1.0 -f https://data.pyg.org/whl/torch-1.13.1+cpu.html
   ```
 
+# Extracting Loss and Valid MRR values from a log
+The script `extractLossAndMRR.sh` takes the file name as argument. See the example below
+
+```
+sh extractLossAndMRR.sh -f=TransE_Corr_codex_s_with_GCN_log
+```
+
+This will create a csv File called `csv_TransE_Corr_codex_s_with_GCN_log` which contains the results.
+Keep in mind, that the parameter only accepts filenames, not paths, so the log must be in the same folder as the script.
+
 # Dataset:
 
 - We use the codex-l, codex-m and codex-s datasets for knowledge graph link prediction. 
